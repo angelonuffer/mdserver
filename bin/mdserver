@@ -1,0 +1,36 @@
+#! /usr/bin/env python
+
+from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from argparse import ArgumentParser
+import os
+
+
+class MDRequestHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        if self.path == "/":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write("<ul>")
+            for document_path in all_markdown_documents(MDRequestHandler.directory):
+                self.wfile.write("<li>%s" % document_path)
+            self.wfile.write("</ul>")
+
+
+def all_markdown_documents(path):
+    documents = list()
+    for child in os.listdir(path):
+        if os.path.splitext(child)[1] == ".md":
+            documents.append(os.path.join(path, child))
+    return documents
+
+def run():
+    arguments_parser = ArgumentParser(description="Serve markdown files.")
+    arguments_parser.add_argument("-d", "--dir", default=".", help="directory containing markdown files")
+    arguments = arguments_parser.parse_args()
+    MDRequestHandler.directory = vars(arguments)["dir"]
+    httpd = HTTPServer(("", 8000), MDRequestHandler)
+    httpd.serve_forever()
+
+run()
