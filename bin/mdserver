@@ -4,28 +4,35 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from argparse import ArgumentParser
 import os
 
+from markdown import markdown
+
 
 class MDRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
+        complete_path = os.path.join(MDRequestHandler.directory, self.path.strip("/"))
         if self.path == "/":
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
             self.wfile.write("<ul>")
-            for document_path in all_markdown_documents(MDRequestHandler.directory):
-                self.wfile.write("<li>%s" % document_path)
+            for document_path in all_markdown_documents("."):
+                self.wfile.write("<li><a href=\"%s\">%s</a>" % (document_path.strip("./"), document_path))
             self.wfile.write("</ul>")
+        if os.path.isfile(complete_path):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(markdown(open(complete_path).read()))
 
 
 def all_markdown_documents(path):
     documents = list()
-    for child in os.listdir(path):
-        child_path = os.path.join(path, child)
-        if os.path.isdir(child_path):
-            documents.extend(all_markdown_documents(child_path))
-        if os.path.splitext(child_path)[1] == ".md":
-            documents.append(child_path)
+    for child in os.listdir(os.path.join(MDRequestHandler.directory, path)):
+        if os.path.isdir(os.path.join(MDRequestHandler.directory, path, child)):
+            documents.extend(all_markdown_documents(os.path.join(path, child)))
+        if os.path.splitext(os.path.join(path, child))[1] == ".md":
+            documents.append(os.path.join(path, child))
     return documents
 
 def run():
