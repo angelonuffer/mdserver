@@ -6,24 +6,45 @@ import os
 
 from markdown import markdown
 
+BASE_HTML = """
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.js">
+        </script>
+        <script type="text/javascript" src="http://code.jquery.com/mobile/git/jquery.mobile-git.js">
+        </script>
+        <link rel="stylesheet" type="text/css" href="http://code.jquery.com/mobile/git/jquery.mobile-git.css" />
+    </head>
+    <body>
+        <div class="ui-content">
+            |content|
+        </div>
+    </body>
+</html>
+"""
+
 
 class MDRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         complete_path = os.path.join(MDRequestHandler.directory, self.path.strip("/"))
+        content = str()
         if self.path == "/":
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write("<ul>")
+            content += "<ul data-role=\"listview\" data-filter=\"true\" data-filter-placeholder=\"Buscar documentos...\">"
             for document_path in all_markdown_documents("."):
-                self.wfile.write("<li><a href=\"%s\">%s</a>" % (document_path.strip("./"), document_path))
-            self.wfile.write("</ul>")
+                content += "<li><a href=\"%s\">%s</a>" % (document_path.strip("./"), document_path)
+            content += "</ul>"
         if os.path.isfile(complete_path):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write(markdown(open(complete_path).read()))
+            content = markdown(open(complete_path).read())
+        page = BASE_HTML.replace("|content|", content)
+        self.wfile.write(page)
 
 
 def all_markdown_documents(path):
