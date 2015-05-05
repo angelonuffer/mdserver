@@ -1,5 +1,5 @@
-Markdown Server
-===============
+Markdown Server v0.1.0
+======================
 
 0. OBJECTIVE
 
